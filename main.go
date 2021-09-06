@@ -10,7 +10,6 @@ import (
 var one = big.NewInt(1)
 var two = big.NewInt(2)
 var Max2000 = big.NewInt(2000)
-var seed int64 = 135
 
 // GenSafePrime generates a pair of safe prime
 func GenSafePrime(bits int) (*big.Int, *big.Int) {
@@ -49,7 +48,7 @@ func FindGenerator(p, q *big.Int, seed int64) *big.Int {
 
 func oneRound(seed int64) int {
 	//Generate a random prime order group
-	p, q := GenSafePrime(20)
+	p, q := GenSafePrime(18)
 	g := FindGenerator(p, q, seed)
 
 	fmt.Println("p = ", *p)
@@ -84,7 +83,7 @@ func oneRound(seed int64) int {
 			fmt.Println("Rounds to break DI = ", iCounter)
 			break
 		}
-		if iCounter >= 1048576 {
+		if iCounter >= 524288 {
 			break
 		}
 		iCounter++
@@ -93,7 +92,7 @@ func oneRound(seed int64) int {
 }
 
 func main() {
-	iCounter := seed
+	var iCounter int64 = 777
 	total := 0
 	maxRound := 1000
 	for i := 0; i < maxRound; i++ {
