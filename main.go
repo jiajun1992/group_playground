@@ -110,7 +110,7 @@ func main() {
 	maxRound := 1000
 	for i := 0; i < maxRound; i++ {
 		temp1, temp2 := oneRound(iCounter + int64(i))
-		if temp2 != 0 {
+		if temp2 == 0 {
 			total += temp1
 		}
 		totalNotFound += temp2
