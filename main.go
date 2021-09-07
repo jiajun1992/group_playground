@@ -3,6 +3,7 @@ package main
 import (
 	crand "crypto/rand"
 	"fmt"
+	"math"
 	"math/big"
 	"math/rand"
 )
@@ -47,8 +48,9 @@ func FindGenerator(p, q *big.Int, seed int64) *big.Int {
 }
 
 func oneRound(seed int64) (int, int) {
+	bitLength := 17
 	//Generate a random prime order group
-	p, q := GenSafePrime(18)
+	p, q := GenSafePrime(bitLength)
 	g := FindGenerator(p, q, seed)
 
 	fmt.Println("p = ", *p)
@@ -79,6 +81,7 @@ func oneRound(seed int64) (int, int) {
 	var A, B big.Int
 
 	iCounter := 0
+	maxRound := math.Pow(2, float64(bitLength))
 	for {
 		y.Rand(rng, q)
 		a.Sub(&y, &x)
@@ -92,8 +95,8 @@ func oneRound(seed int64) (int, int) {
 			fmt.Println("Rounds to break DI = ", iCounter)
 			break
 		}
-		if iCounter >= 524288 {
-			return iCounter, 0
+		if iCounter >= int(maxRound) {
+			return iCounter, 1
 		}
 		iCounter++
 	}
@@ -107,10 +110,12 @@ func main() {
 	maxRound := 1000
 	for i := 0; i < maxRound; i++ {
 		temp1, temp2 := oneRound(iCounter + int64(i))
-		total += temp1
+		if temp2 != 0 {
+			total += temp1
+		}
 		totalNotFound += temp2
 	}
 	fmt.Println("Total = ", total)
 	fmt.Println("TotalNotFound = ", totalNotFound)
-	fmt.Println("Average = ", total/maxRound)
+	fmt.Println("Average = ", total/(maxRound-totalNotFound))
 }
