@@ -46,7 +46,7 @@ func FindGenerator(p, q *big.Int, seed int64) *big.Int {
 
 }
 
-func oneRound(seed int64) int {
+func oneRound(seed int64) (int, int) {
 	//Generate a random prime order group
 	p, q := GenSafePrime(18)
 	g := FindGenerator(p, q, seed)
@@ -59,10 +59,19 @@ func oneRound(seed int64) int {
 	sqrtP.Sqrt(p)
 	fmt.Println("sqrtP = ", sqrtP)
 
-	// find a random x in Z_p
+	// find a random x in Z_p, and g^x mod p is not a prime
 	rng := rand.New(rand.NewSource(seed))
 	var x big.Int
-	x.Rand(rng, q)
+
+	for {
+		x.Rand(rng, q)
+		var tempGx big.Int
+		tempGx.Exp(g, &x, p)
+		flag := tempGx.ProbablyPrime(40)
+		if !flag {
+			break
+		}
+	}
 
 	// find a pair of y and a, s.t. x = y-a mod q
 	var y, a big.Int
@@ -84,20 +93,24 @@ func oneRound(seed int64) int {
 			break
 		}
 		if iCounter >= 524288 {
-			break
+			return iCounter, 0
 		}
 		iCounter++
 	}
-	return iCounter
+	return iCounter, 0
 }
 
 func main() {
 	var iCounter int64 = 777
 	total := 0
+	totalNotFound := 0
 	maxRound := 1000
 	for i := 0; i < maxRound; i++ {
-		total += oneRound(iCounter + int64(i))
+		temp1, temp2 := oneRound(iCounter + int64(i))
+		total += temp1
+		totalNotFound += temp2
 	}
 	fmt.Println("Total = ", total)
+	fmt.Println("TotalNotFound = ", totalNotFound)
 	fmt.Println("Average = ", total/maxRound)
 }
