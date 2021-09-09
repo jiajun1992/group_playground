@@ -84,7 +84,7 @@ func oneRound(seed int64) (int, int) {
 	maxRound := math.Pow(2, float64(bitLength))
 	for {
 		y.Rand(rng, q)
-		a.Sub(&y, &x)
+		a.Sub(&x, &y)
 		a.Mod(&a, q)
 		A.Exp(g, &y, p)
 		B.Exp(g, &a, p)
