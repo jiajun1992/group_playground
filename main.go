@@ -33,12 +33,16 @@ func GenSafePrime(bits int) (*big.Int, *big.Int) {
 }
 
 func FindGenerator(p, q *big.Int, seed int64) *big.Int {
-	rng := rand.New(rand.NewSource(seed))
+	//rng := rand.New(rand.NewSource(seed))
 	var g big.Int
 
 	for {
-		g.Rand(rng, p)
-		var temp big.Int
+		temp, _ := GenSafePrime(p.BitLen() - 1) //-1 is just for simplicity to make g < p
+		g = *temp
+		// check if g < p, if not, find a new g
+		if g.Cmp(p) != -1 {
+			continue
+		}
 		temp.Exp(&g, q, p)
 		if temp.Cmp(one) == 0 {
 			return &g
@@ -48,7 +52,7 @@ func FindGenerator(p, q *big.Int, seed int64) *big.Int {
 }
 
 func oneRound(seed int64) (int, int) {
-	bitLength := 17
+	bitLength := 15
 	//Generate a random prime order group
 	p, q := GenSafePrime(bitLength)
 	g := FindGenerator(p, q, seed)
@@ -61,19 +65,12 @@ func oneRound(seed int64) (int, int) {
 	sqrtP.Sqrt(p)
 	fmt.Println("sqrtP = ", sqrtP)
 
-	// find a random x in Z_p, and g^x mod p is not a prime
 	rng := rand.New(rand.NewSource(seed))
 	var x big.Int
-
-	for {
-		x.Rand(rng, q)
-		var tempGx big.Int
-		tempGx.Exp(g, &x, p)
-		flag := tempGx.ProbablyPrime(40)
-		if !flag {
-			break
-		}
-	}
+	var Gx big.Int
+	x.Rand(rng, q)
+	Gx.Exp(g, &x, p)
+	fmt.Println("G^x mod p= ", Gx)
 
 	// find a pair of y and a, s.t. x = y-a mod q
 	var y, a big.Int
@@ -84,7 +81,7 @@ func oneRound(seed int64) (int, int) {
 	maxRound := math.Pow(2, float64(bitLength))
 	for {
 		y.Rand(rng, q)
-		a.Sub(&y, &x)
+		a.Sub(&x, &y)
 		a.Mod(&a, q)
 		A.Exp(g, &y, p)
 		B.Exp(g, &a, p)
@@ -92,6 +89,9 @@ func oneRound(seed int64) (int, int) {
 		if A.Cmp(&sqrtP) == -1 && B.Cmp(&sqrtP) == -1 {
 			fmt.Println("A = ", A)
 			fmt.Println("B = ", B)
+			A.Mul(&A, &B)
+			A.Mod(&A, p)
+			fmt.Println("A*B = ", A)
 			fmt.Println("Rounds to break DI = ", iCounter)
 			break
 		}
@@ -100,6 +100,7 @@ func oneRound(seed int64) (int, int) {
 		}
 		iCounter++
 	}
+
 	return iCounter, 0
 }
 
@@ -107,7 +108,7 @@ func main() {
 	var iCounter int64 = 777
 	total := 0
 	totalNotFound := 0
-	maxRound := 1000
+	maxRound := 100
 	for i := 0; i < maxRound; i++ {
 		temp1, temp2 := oneRound(iCounter + int64(i))
 		if temp2 == 0 {
